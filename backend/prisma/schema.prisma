@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EmailStatus {
+  SCHEDULED
+  PROCESSING
+  SENT
+  FAILED
+  RATE_LIMITED
+}
+
+enum CampaignStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
+model User {
+  id              String          @id @default(cuid())
+  googleId        String?         @unique
+  email           String          @unique
+  name            String
+  avatarUrl       String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  senders         Sender[]
+  campaigns       EmailCampaign[]
+  emails          Email[]
+  slackConnection SlackConnection?
+}
+
+model Sender {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  isDefault Boolean         @default(false)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  campaigns EmailCampaign[]
+  emails    Email[]
+
+  @@unique([userId, email])
+  @@index([userId])
+}
+
+model EmailCampaign {
+  id                 String         @id @default(cuid())
+  userId             String
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderId           String
+  sender             Sender         @relation(fields: [senderId], references: [id])
+  subject            String
+  body               String         @db.Text
+  startTime          DateTime
+  delayBetweenEmails Int            // milliseconds between individual emails
+  hourlyLimit        Int            // max emails per hour for this sender
+  status             CampaignStatus @default(ACTIVE)
+  totalEmails        Int            @default(0)
+  sentCount          Int            @default(0)
+  failedCount        Int            @default(0)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  emails             Email[]
+
+  @@index([userId])
+  @@index([senderId])
+  @@index([status])
+}
+
+model Email {
+  id                String      @id @default(cuid())
+  campaignId        String
+  campaign          EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderId          String
+  sender            Sender      @relation(fields: [senderId], references: [id])
+  recipient         String
+  subject           String
+  body              String      @db.Text
+  scheduledAt       DateTime
+  sentAt            DateTime?
+  status            EmailStatus @default(SCHEDULED)
+  attempts          Int         @default(0)
+  maxAttempts       Int         @default(3)
+  errorMessage      String?
+  providerMessageId String?
+  sequenceNumber    Int         // ordering within campaign
+  jobId             String?     @unique // BullMQ job ID for idempotency
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([campaignId])
+  @@index([senderId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([recipient])
+}
+
+model SlackConnection {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId      String
+  teamName    String
+  channelId   String?
+  channelName String?
+  accessToken String
+  botUserId   String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
