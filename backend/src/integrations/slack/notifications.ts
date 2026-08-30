@@ -5,9 +5,9 @@ import { checkAndMarkRateLimitNotified } from '../../utils/rateLimiter';
 
 export function getSlackOAuthUrl(state?: string): string {
   const params = new URLSearchParams({
-    client_id: env.slack.clientId,
+    client_id: env.slack.clientId || '',
     scope: 'chat:write,channels:read,chat:write.public',
-    redirect_uri: env.slack.redirectUri,
+    redirect_uri: env.slack.redirectUri || '',
     ...(state && { state }),
   });
 
@@ -25,9 +25,9 @@ export async function exchangeSlackCode(code: string): Promise<{
   const client = new WebClient();
 
   const result = await client.oauth.v2.access({
-    client_id: env.slack.clientId,
-    client_secret: env.slack.clientSecret,
-    redirect_uri: env.slack.redirectUri,
+    client_id: env.slack.clientId || '',
+    client_secret: env.slack.clientSecret || '',
+    redirect_uri: env.slack.redirectUri || '',
     code,
   });
 
