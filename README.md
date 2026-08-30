@@ -1,6 +1,6 @@
 # ON8 — Email Job Scheduler & Campaign Dashboard
 
-A production-quality full-stack email scheduling platform built as a placement assignment for **Outbox Labs / ReachInbox**. Schedule one-off or bulk email campaigns with precise rate limiting, real-time status tracking, and a beautiful dashboard UI.
+A production-quality full-stack email scheduling platform built for **Outbox Labs / ReachInbox**. Schedule one-off or bulk email campaigns with precise rate limiting, real-time status tracking, and a beautiful dashboard UI.
 
 ---
 
